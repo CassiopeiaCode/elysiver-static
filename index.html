@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ELYS IVER - Sci-Fi Core</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #f8f5f2; /* 暖白/米白背景 */
+      overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      user-select: none;
+    }
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .top-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4rem;
+      background: rgb(120 70 0 / 40%); 
+      z-index: 30;
+      overflow: hidden;
+    }
+
+    .top-banner::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -30%;
+      width: 30%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,0.8) 50%,
+        rgba(255,255,255,0) 100%
+      );
+      animation: bannerShine 3.2s linear infinite;
+    }
+
+    @keyframes bannerShine {
+      to { left: 130%; }
+    }
+
+    .nebula-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      /* 暖色调星云背景 */
+      background:
+        radial-gradient(circle at 20% 25%, rgba(255, 120, 0, 0.08), transparent 35%),
+        radial-gradient(circle at 78% 72%, rgba(255, 60, 0, 0.06), transparent 36%),
+        radial-gradient(circle at 50% 60%, rgba(255, 200, 0, 0.08), transparent 45%);
+      filter: blur(24px) saturate(115%);
+      animation: nebulaDrift 18s ease-in-out infinite alternate;
+    }
+
+    @keyframes nebulaDrift {
+      0% { transform: scale(1) translate(0, 0); opacity: 0.65; }
+      100% { transform: scale(1.06) translate(-1.5%, 1%); opacity: 0.85; }
+    }
+
+    .glow-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 56vw;
+      height: 56vw;
+      max-width: 760px;
+      max-height: 760px;
+      /* 中心暖色强光晕 */
+      background: radial-gradient(circle, rgba(255, 140, 0, 0.12) 0%, rgba(255, 80, 0, 0.04) 42%, transparent 72%);
+      z-index: 2;
+      pointer-events: none;
+      animation: softPulse 5.5s ease-in-out infinite;
+    }
+
+    @keyframes softPulse {
+      0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+    }
+
+    .lens-flare-line {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 1px;
+      background: rgba(255, 150, 50, 0.35);
+      box-shadow: 0 0 6px rgba(255, 150, 50, 0.35), 0 0 16px rgba(255, 100, 0, 0.25), 0 0 30px rgba(255, 50, 0, 0.15);
+      z-index: 3;
+      opacity: 0.65;
+      pointer-events: none;
+      animation: flareMove 6s ease-in-out infinite;
+    }
+
+    @keyframes flareMove {
+      0%, 100% { transform: translate(-50%, -50%) scaleX(1); opacity: 0.55; }
+      50% { transform: translate(-50%, -50%) scaleX(1.08); opacity: 0.75; }
+    }
+
+    .lens-flare-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90px;
+      height: 90px;
+      /* 耀斑中心变为暖金白 */
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 160, 50, 0.5) 22%, transparent 65%);
+      z-index: 4;
+      pointer-events: none;
+      animation: centerBreath 3.5s ease-in-out infinite;
+    }
+
+    @keyframes centerBreath {
+      0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.95); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+    }
+
+    .vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      pointer-events: none;
+      /* 浅色主题的四周暗角应为暖灰调 */
+      background: radial-gradient(circle, transparent 42%, rgba(200, 185, 175, 0.35) 100%);
+    }
+
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      z-index: 7;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(150, 80, 0, 0.04) 0px,
+        rgba(150, 80, 0, 0.04) 1px,
+        transparent 2px,
+        transparent 4px
+      );
+      mix-blend-mode: multiply;
+      opacity: 0.4;
+      animation: scanMove 0.9s linear infinite;
+    }
+
+    @keyframes scanMove {
+      from { transform: translateY(0); }
+      to { transform: translateY(4px); }
+    }
+
+    .grain {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      pointer-events: none;
+      /* 白底上的黑色噪点 */
+      background-image: radial-gradient(rgba(0, 0, 0, 0.07) 0.6px, transparent 0.7px);
+      background-size: 3px 3px;
+      opacity: 0.08;
+      animation: grainJitter 0.25s steps(2) infinite;
+    }
+
+    @keyframes grainJitter {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(0.5px, -0.5px); }
+      50% { transform: translate(-0.5px, 0.5px); }
+      75% { transform: translate(0.5px, 0.5px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .text {
+      font-size: clamp(3rem, 8vw, 10rem);
+      color: #ff8c00; /* 暖橙色字体 */
+      opacity: 0.35;
+      text-shadow: 0 0 3px rgba(255,140,0,0.5), 0 0 10px rgba(255,100,0,0.4), 0 0 20px rgba(255,60,0,0.2), 0 0 38px rgba(255,20,0,0.15);
+      letter-spacing: 0.15em;
+      font-weight: 700;
+      text-transform: uppercase;
+      animation: textFlicker 5s ease-in-out infinite;
+    }
+
+    @keyframes textFlicker {
+      0%, 100% { filter: brightness(0.95); }
+      47% { filter: brightness(1); }
+      48% { filter: brightness(0.75); }
+      49% { filter: brightness(1.08); }
+      50% { filter: brightness(0.92); }
+    }
+
+    .spacer {
+      width: clamp(200px, 35vw, 500px);
+    }
+
+    #scene-root {
+      position: absolute;
+      inset: 0;
+      transform: translateY(2rem);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    #scene-root #canvas-container {
+      pointer-events: auto;
+    }
+
+    #white-flash {
+      position: fixed;
+      inset: 0;
+      background: #ffffff; /* 纯白闪光 */
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity 1.4s ease;
+    }
+
+    #white-flash.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-banner"></div>
+
+<div id="scene-root">
+  <div id="canvas-container"></div>
+  <div class="nebula-bg"></div>
+  <div class="glow-bg"></div>
+  <div class="lens-flare-line"></div>
+  <div class="lens-flare-center"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="grain"></div>
+
+  <div class="content">
+    <div class="text">ELYS</div>
+    <div class="spacer"></div>
+    <div class="text">IVER</div>
+  </div>
+</div>
+
+<div id="white-flash"></div>
+
+<script>
+  window.addEventListener("DOMContentLoaded", init3DScene);
+
+  function init3DScene() {
+    const container = document.getElementById("canvas-container");
+    const flashEl = document.getElementById("white-flash");
+
+    const scene = new THREE.Scene();
+    // 迷雾匹配暖白背景
+    scene.fog = new THREE.FogExp2(0xf8f5f2, 0.001);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 45;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.95;
+    container.appendChild(renderer.domElement);
+
+    const coreGroup = new THREE.Group();
+    scene.add(coreGroup);
+
+    // 核心球体：白色底色，暖橙色发光
+    const coreGeometry = new THREE.SphereGeometry(10, 64, 64);
+    const coreMaterial = new THREE.MeshPhongMaterial({
+      color: 0xffffff,
+      emissive: 0xffaa66,
+      shininess: 42
+    });
+    const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
+    coreGroup.add(coreMesh);
+
+    // 线框 1：亮橙色
+    const wireGeometry1 = new THREE.SphereGeometry(10.2, 32, 32);
+    const wireMaterial1 = new THREE.MeshBasicMaterial({
+      color: 0xff8800,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.25
+    });
+    const wireMesh1 = new THREE.Mesh(wireGeometry1, wireMaterial1);
+    coreGroup.add(wireMesh1);
+
+    // 线框 2：朱红色
+    const wireGeometry2 = new THREE.IcosahedronGeometry(10.4, 3);
+    const wireMaterial2 = new THREE.MeshBasicMaterial({
+      color: 0xff4400,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.3
+    });
+    const wireMesh2 = new THREE.Mesh(wireGeometry2, wireMaterial2);
+    coreGroup.add(wireMesh2);
+
+    // 旋转环：暖金黄与亮橙交替
+    const ringGroup = new THREE.Group();
+    coreGroup.add(ringGroup);
+    for (let i = 0; i < 3; i++) {
+      const ringGeo = new THREE.TorusGeometry(12 + i * 1.35, 0.05, 16, 180);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: i % 2 === 0 ? 0xff9900 : 0xff5500,
+        transparent: true,
+        opacity: 0.4
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.random() * Math.PI;
+      ring.rotation.y = Math.random() * Math.PI;
+      ring.rotation.z = Math.random() * Math.PI;
+      ringGroup.add(ring);
+    }
+
+    // 卫星粒子：暖橙与赤红交替
+    const satelliteGroup = new THREE.Group();
+    coreGroup.add(satelliteGroup);
+    const satellites = [];
+    for (let i = 0; i < 128; i++) {
+      const satGeo = new THREE.SphereGeometry(0.12, 8, 8);
+      const satMat = new THREE.MeshBasicMaterial({
+        color: i % 2 ? 0xffaa00 : 0xff4400,
+        transparent: true,
+        opacity: 0.9
+      });
+      const sat = new THREE.Mesh(satGeo, satMat);
+      satellites.push({
+        mesh: sat,
+        radius: 11 + Math.random() * 9,
+        speed: 0.002 + Math.random() * 0.007,
+        phase: Math.random() * Math.PI * 2,
+        yAmp: 0.4 + Math.random() * 0.5,
+        yFreq: 0.2 + Math.random() * 0.5,
+        yPhase: Math.random() * Math.PI * 2,
+        ellipse: 0.75 + Math.random() * 0.6,
+        tiltX: (Math.random() - 0.5) * 1.4,
+        tiltY: (Math.random() - 0.5) * Math.PI,
+        tiltZ: (Math.random() - 0.5) * 1.5
+      });
+      satelliteGroup.add(sat);
+    }
+
+    // 脉冲波：金黄与橙色
+    const pulseGroup = new THREE.Group();
+    coreGroup.add(pulseGroup);
+    const pulses = [];
+    for (let i = 0; i < 3; i++) {
+      const pulseGeo = new THREE.RingGeometry(10.8, 11.0, 64);
+      const pulseMat = new THREE.MeshBasicMaterial({
+        color: i % 2 ? 0xffcc00 : 0xff6600,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.4
+      });
+      const pulse = new THREE.Mesh(pulseGeo, pulseMat);
+      pulse.rotation.x = Math.PI / 2;
+      pulse.userData.base = 1 + i * 0.35;
+      pulses.push(pulse);
+      pulseGroup.add(pulse);
+    }
+
+    // 中心微小粒子
+    const particlesGroup = new THREE.Group();
+    coreGroup.add(particlesGroup);
+
+    const nodeCount = 300;
+    for (let i = 0; i < nodeCount; i++) {
+      const boxGeo = new THREE.BoxGeometry(
+        Math.random() * 0.4 + 0.1,
+        Math.random() * 0.4 + 0.1,
+        Math.random() * 0.4 + 0.1
+      );
+
+      const nodeMat = new THREE.MeshBasicMaterial({
+        color: Math.random() > 0.4 ? 0xff9900 : 0xff3300,
+        transparent: true,
+        opacity: Math.random() * 0.5 + 0.4
+      });
+
+      const nodeMesh = new THREE.Mesh(boxGeo, nodeMat);
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const radius = 10 + Math.random() * 0.6;
+      nodeMesh.position.setFromSphericalCoords(radius, phi, theta);
+      nodeMesh.lookAt(0, 0, 0);
+      particlesGroup.add(nodeMesh);
+    }
+
+    // 背景星空：分配红、黄、橙等暖系色彩
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsCount = 1800;
+    const posArray = new Float32Array(starsCount * 3);
+    const colorsArray = new Float32Array(starsCount * 3);
+
+    for (let i = 0; i < starsCount * 3; i += 3) {
+      posArray[i] = (Math.random() - 0.5) * 160;
+      posArray[i + 1] = (Math.random() - 0.5) * 160;
+      posArray[i + 2] = (Math.random() - 0.5) * 110 - 20;
+
+      const c = Math.random();
+      if (c > 0.8) {
+        // 暖黄
+        colorsArray[i] = 1.0; colorsArray[i + 1] = 0.8; colorsArray[i + 2] = 0.4;
+      } else if (c > 0.6) {
+        // 金橙色
+        colorsArray[i] = 1.0; colorsArray[i + 1] = 0.5; colorsArray[i + 2] = 0.1;
+      } else {
+        // 深红橙
+        colorsArray[i] = 0.8; colorsArray[i + 1] = 0.2; colorsArray[i + 2] = 0.0;
+      }
+    }
+
+    starsGeometry.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
+    starsGeometry.setAttribute("color", new THREE.BufferAttribute(colorsArray, 3));
+
+    // 取消了 AdditiveBlending（在白背景下使用叠加混合会导致隐形）
+    const starsMaterial = new THREE.PointsMaterial({
+      size: 0.35,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.NormalBlending
+    });
+    const starsMesh = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(starsMesh);
+
+    // 穿梭流体星系：金琥珀色
+    const streamCount = 1200;
+    const streamGeo = new THREE.BufferGeometry();
+    const streamPos = new Float32Array(streamCount * 3);
+    const streamSpeed = new Float32Array(streamCount);
+
+    for (let i = 0; i < streamCount; i++) {
+      streamPos[i * 3] = (Math.random() - 0.5) * 170;
+      streamPos[i * 3 + 1] = (Math.random() - 0.5) * 100;
+      streamPos[i * 3 + 2] = Math.random() * -160;
+      streamSpeed[i] = Math.random() * 0.16 + 0.05;
+    }
+
+    streamGeo.setAttribute("position", new THREE.BufferAttribute(streamPos, 3));
+    const streamMat = new THREE.PointsMaterial({
+      color: 0xffa64d,
+      size: 0.25,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.NormalBlending
+    });
+    const streamPoints = new THREE.Points(streamGeo, streamMat);
+    scene.add(streamPoints);
+
+    // 飞掠流星：亮橙色
+    const meteorCount = 120;
+    const meteorGeo = new THREE.BufferGeometry();
+    const meteorPos = new Float32Array(meteorCount * 3);
+    const meteorSpeed = new Float32Array(meteorCount);
+    for (let i = 0; i < meteorCount; i++) {
+      meteorPos[i * 3] = Math.random() * 180 - 90;
+      meteorPos[i * 3 + 1] = Math.random() * 120 - 60;
+      meteorPos[i * 3 + 2] = Math.random() * -180;
+      meteorSpeed[i] = 0.25 + Math.random() * 0.35;
+    }
+    meteorGeo.setAttribute("position", new THREE.BufferAttribute(meteorPos, 3));
+    const meteorMat = new THREE.PointsMaterial({
+      color: 0xff7700,
+      size: 0.45,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.NormalBlending
+    });
+    const meteorPoints = new THREE.Points(meteorGeo, meteorMat);
+    scene.add(meteorPoints);
+
+    // 场景灯光
+    const ambientLight = new THREE.AmbientLight(0xffeedd, 0.7); // 偏暖的泛光
+    scene.add(ambientLight);
+
+    const pointLight = new THREE.PointLight(0xff8800, 1.2, 70); // 核心暖橙光源
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+
+    const rimLightL = new THREE.PointLight(0xff4400, 0.6, 120); // 左侧赤色补光
+    rimLightL.position.set(-24, 8, 20);
+    scene.add(rimLightL);
+
+    const rimLightR = new THREE.PointLight(0xffbb00, 0.5, 120); // 右侧金黄补光
+    rimLightR.position.set(24, -10, 18);
+    scene.add(rimLightR);
+
+    // 随机大天体组
+    const skyEventGroup = new THREE.Group();
+    scene.add(skyEventGroup);
+    const roamingBodies = [];
+    let nextBodySpawn = performance.now() + rand(4000, 9000);
+
+    let isExploding = false;
+    let explosionStartedAt = 0;
+    let clickCount = 0;
+    let clickTimer = null;
+    const clickWindowMs = 1800;
+    const redirectUrl = "https://present.h-e.top/?step=0&codes_file=secret-index-26-3-9.txt";
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function spawnLargeBody() {
+      const bodyGroup = new THREE.Group();
+
+      const radius = rand(3.8, 9.5);
+      const bodyGeo = new THREE.SphereGeometry(radius, 32, 32);
+      // 天体同样修改为暖色系色彩库
+      const bodyColors = [0xffb347, 0xff7b00, 0xff9933, 0xe65c00, 0xffcc66];
+      const color = bodyColors[Math.floor(Math.random() * bodyColors.length)];
+
+      const bodyMat = new THREE.MeshPhongMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.08,
+        shininess: 18,
+        transparent: true,
+        opacity: 0
+      });
+
+      const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+      bodyGroup.add(bodyMesh);
+
+      let ringMat = null;
+      if (Math.random() > 0.45) {
+        const ringGeo = new THREE.RingGeometry(radius * 1.25, radius * 1.8, 72);
+        ringMat = new THREE.MeshBasicMaterial({
+          color: 0xffdcb3,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0
+        });
+        const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        ringMesh.rotation.x = Math.PI / 2.4;
+        ringMesh.rotation.y = rand(0, Math.PI);
+        bodyGroup.add(ringMesh);
+      }
+
+      const fromLeft = Math.random() > 0.5;
+      bodyGroup.position.set(
+        fromLeft ? -100 : 100,
+        rand(-30, 30),
+        rand(-120, -70)
+      );
+
+      skyEventGroup.add(bodyGroup);
+
+      roamingBodies.push({
+        group: bodyGroup,
+        bodyMat,
+        ringMat,
+        vx: fromLeft ? rand(0.025, 0.065) : -rand(0.025, 0.065),
+        vy: rand(-0.006, 0.006),
+        spinX: rand(-0.002, 0.002),
+        spinY: rand(0.001, 0.003),
+        age: 0,
+        life: 6000,
+        maxOpacity: rand(0.2, 0.38)
+      });
+    }
+
+    function triggerUniverseExplosion() {
+      if (isExploding) return;
+      isExploding = true;
+      explosionStartedAt = performance.now();
+
+      flashEl.classList.add("show");
+   
+      try {
+        if (window.top && window.top !== window.self) {
+          window.top.location.href = redirectUrl;
+        } else {
+          window.location.href = redirectUrl;
+        }
+      } catch (_e) {
+        window.location.href = redirectUrl;
+      }
+    }
+
+    function registerRapidClick() {
+      if (isExploding) return;
+
+      clickCount += 1;
+
+      if (clickTimer) clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => {
+        clickCount = 0;
+      }, clickWindowMs);
+
+      if (clickCount >= 5) {
+        clickCount = 0;
+        triggerUniverseExplosion();
+      }
+    }
+
+    window.addEventListener("pointerdown", registerRapidClick);
+
+    let time = 0;
+    const streamPositionAttr = streamGeo.getAttribute("position");
+    const meteorPositionAttr = meteorGeo.getAttribute("position");
+    const tmpVec = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.005;
+
+      const syncSpin = -0.0012;
+
+      if (!isExploding) {
+        coreGroup.rotation.y += 0.0018;
+        coreGroup.rotation.x = Math.sin(time * 0.5) * 0.09;
+        coreGroup.rotation.z = Math.sin(time * 0.5) * 0.09;
+
+        wireMesh1.rotation.y -= syncSpin;
+        wireMesh2.rotation.y -= syncSpin;
+        particlesGroup.rotation.y -= syncSpin;
+
+        ringGroup.rotation.y += 0.0022;
+        ringGroup.rotation.x += 0.0006;
+
+        satellites.forEach((s, idx) => {
+          const a = time * (s.speed * 220) + s.phase + idx * 0.05;
+          const x = Math.cos(a) * s.radius * s.ellipse;
+          const z = Math.sin(a) * s.radius;
+          const yBase = Math.sin(a * s.yFreq + s.yPhase) * s.yAmp;
+          tmpVec.set(x, yBase, z);
+          tmpVec.applyEuler(new THREE.Euler(s.tiltX, s.tiltY, s.tiltZ));
+          s.mesh.position.copy(tmpVec);
+        });
+
+        pulses.forEach((p, idx) => {
+          const wave = (time * 1.5 + idx * 0.9) % 2.4;
+          const scale = 1 + wave * 0.25;
+          p.scale.set(scale, scale, scale);
+          p.material.opacity = Math.max(0.04, 0.4 - wave * 0.15);
+          p.rotation.z += 0.0012 + idx * 0.0003;
+        });
+
+        starsMesh.rotation.y -= 0.00035;
+        starsMesh.rotation.x = Math.sin(time * 0.2) * 0.03;
+
+        for (let i = 0; i < streamCount; i++) {
+          const zIndex = i * 3 + 2;
+          streamPositionAttr.array[zIndex] += streamSpeed[i];
+          if (streamPositionAttr.array[zIndex] > 30) streamPositionAttr.array[zIndex] = -170;
+        }
+        streamPositionAttr.needsUpdate = true;
+
+        for (let i = 0; i < meteorCount; i++) {
+          const xIndex = i * 3;
+          const yIndex = i * 3 + 1;
+          const zIndex = i * 3 + 2;
+
+          meteorPositionAttr.array[xIndex] += meteorSpeed[i] * 0.22;
+          meteorPositionAttr.array[yIndex] -= meteorSpeed[i] * 0.18;
+          meteorPositionAttr.array[zIndex] += meteorSpeed[i];
+
+          if (meteorPositionAttr.array[zIndex] > 25) {
+            meteorPositionAttr.array[xIndex] = Math.random() * 180 - 90;
+            meteorPositionAttr.array[yIndex] = Math.random() * 120 - 60;
+            meteorPositionAttr.array[zIndex] = -180;
+          }
+        }
+        meteorPositionAttr.needsUpdate = true;
+
+        const now = performance.now();
+        if (now > nextBodySpawn) {
+          spawnLargeBody();
+          nextBodySpawn = now + rand(7000, 16000);
+        }
+
+        for (let i = roamingBodies.length - 1; i >= 0; i--) {
+          const b = roamingBodies[i];
+          b.age++;
+
+          b.group.position.x += b.vx;
+          b.group.position.y += b.vy;
+          b.group.rotation.x += b.spinX;
+          b.group.rotation.y += b.spinY;
+
+          const fadeIn = 180;
+          const fadeOut = 260;
+          let alpha = b.maxOpacity;
+
+          if (b.age < fadeIn) {
+            alpha = b.maxOpacity * (b.age / fadeIn);
+          } else if (b.life - b.age < fadeOut) {
+            alpha = b.maxOpacity * Math.max(0, (b.life - b.age) / fadeOut);
+          }
+
+          b.bodyMat.opacity = alpha;
+          if (b.ringMat) b.ringMat.opacity = alpha * 0.75;
+
+          if (
+            b.age > b.life ||
+            Math.abs(b.group.position.x) > 120 ||
+            Math.abs(b.group.position.y) > 80
+          ) {
+            skyEventGroup.remove(b.group);
+            roamingBodies.splice(i, 1);
+          }
+        }
+
+        coreGroup.position.y = Math.sin(time * 2) * 0.7;
+        pointLight.intensity = 1.0 + Math.sin(time * 3.2) * 0.12;
+      } else {
+        const elapsed = performance.now() - explosionStartedAt;
+        const burst = Math.min(elapsed / 900, 1);
+        const fade = Math.min(elapsed / 1400, 1);
+
+        coreGroup.scale.setScalar(1 + burst * 4.5);
+        ringGroup.scale.setScalar(1 + burst * 7);
+        pulseGroup.scale.setScalar(1 + burst * 9);
+        particlesGroup.scale.setScalar(1 + burst * 11);
+        satelliteGroup.scale.setScalar(1 + burst * 10);
+
+        coreMaterial.emissiveIntensity = 0.6 + burst * 2.2;
+        pointLight.intensity = 1.2 + burst * 10;
+        ambientLight.intensity = 0.7 + burst * 1.8;
+        rimLightL.intensity = 0.6 + burst * 3.5;
+        rimLightR.intensity = 0.5 + burst * 3.5;
+
+        coreMaterial.opacity = 1 - fade;
+        coreMaterial.transparent = true;
+        wireMaterial1.opacity = Math.max(0, 0.25 * (1 - fade));
+        wireMaterial2.opacity = Math.max(0, 0.3 * (1 - fade));
+
+        for (const p of pulses) {
+          p.material.opacity = Math.max(0, 0.4 * (1 - fade));
+        }
+
+        starsMaterial.opacity = Math.max(0, 0.7 * (1 - fade * 1.2));
+        streamMat.opacity = Math.max(0, 0.6 * (1 - fade * 1.15));
+        meteorMat.opacity = Math.max(0, 0.8 * (1 - fade * 1.2));
+
+        coreGroup.rotation.y += 0.02;
+        coreGroup.rotation.x += 0.012;
+        coreGroup.rotation.z += 0.01;
+        starsMesh.rotation.y -= 0.004;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  }
+</script>
+</body>
+</html>
