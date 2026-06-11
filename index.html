@@ -1169,7 +1169,8 @@
         stereoSpread: randomStep(0.35, 1, 0.05),
         strumDelay: randomStep(0, 45, 5),
         releaseTime: randomStep(0.25, 0.9, 0.05),
-        distance: randomStep(0, 0.22, 0.02)
+        distance: randomStep(0, 0.22, 0.02),
+        noteLastPlayedAt: new Map()
       };
     }
 
@@ -1198,16 +1199,8 @@
         const now = audioCtx.currentTime;
         const params = synthParams || flowState.currentSynthParams;
         const chord = CHORDS_LIBRARY[params.chordType] || CHORDS_LIBRARY.major7;
-        const intervalsPool = [...chord.intervals];
         const voiceCount = Math.floor(Math.random() * 2) + 1;
-        const notesToPlay = [];
-
-        for (let i = 0; i < voiceCount; i++) {
-          if (!intervalsPool.length) break;
-          const index = Math.floor(Math.random() * intervalsPool.length);
-          const interval = intervalsPool.splice(index, 1)[0];
-          notesToPlay.push(params.rootFreq * Math.pow(2, interval / 12));
-        }
+        const notesToPlay = pickWeightedNotes(chord.intervals, params, voiceCount, now);
 
         const masterCompressor = audioCtx.createDynamicsCompressor();
         masterCompressor.threshold.setValueAtTime(-10, now);
@@ -1259,6 +1252,47 @@
           osc.stop(startTime + params.releaseTime + 0.1);
         });
       } catch (_e) {}
+    }
+
+    function pickWeightedNotes(intervals, params, voiceCount, now) {
+      const lastPlayed = params.noteLastPlayedAt || new Map();
+      params.noteLastPlayedAt = lastPlayed;
+
+      const weighted = intervals
+        .map((interval, index) => ({
+          interval,
+          key: `${index}:${interval}`,
+          lastPlayedAt: lastPlayed.has(`${index}:${interval}`) ? lastPlayed.get(`${index}:${interval}`) : -Infinity
+        }))
+        .sort((a, b) => a.lastPlayedAt - b.lastPlayedAt);
+
+      weighted.forEach((item, index) => {
+        item.weight = weighted.length - index;
+      });
+
+      const selected = [];
+      const pool = [...weighted];
+      const count = Math.min(voiceCount, pool.length);
+
+      for (let i = 0; i < count; i++) {
+        const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
+        let ticket = Math.random() * totalWeight;
+        let selectedIndex = 0;
+
+        for (let j = 0; j < pool.length; j++) {
+          ticket -= pool[j].weight;
+          if (ticket <= 0) {
+            selectedIndex = j;
+            break;
+          }
+        }
+
+        const [item] = pool.splice(selectedIndex, 1);
+        lastPlayed.set(item.key, now);
+        selected.push(params.rootFreq * Math.pow(2, item.interval / 12));
+      }
+
+      return selected;
     }
 
     function spawnCapsuleCard(data, synthParams) {
