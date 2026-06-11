@@ -270,6 +270,42 @@
       z-index: 0;
     }
 
+    #realtime-audio-button {
+      position: fixed;
+      right: 18px;
+      top: 50%;
+      z-index: 40;
+      width: 38px;
+      height: 38px;
+      transform: translateY(-50%);
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(20, 20, 20, 0.82);
+      box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.14),
+        inset 0 1px 2px rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    #realtime-audio-button:hover {
+      transform: translateY(-50%) scale(1.06);
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.72);
+    }
+
+    #realtime-audio-button span {
+      transform: translateY(-1px);
+      font-size: 18px;
+      line-height: 1;
+    }
+
     #realtime-cards {
       pointer-events: none;
       z-index: 1;
@@ -433,6 +469,7 @@
 
 <div id="realtime-flow" aria-hidden="true">
   <canvas id="realtime-flow-canvas"></canvas>
+  <button id="realtime-audio-button" type="button" aria-label="启用实时调用声音"><span>🔊</span></button>
   <div id="realtime-cards"></div>
 </div>
 
@@ -989,6 +1026,7 @@
     const flowRoot = document.getElementById("realtime-flow");
     const cardsContainer = document.getElementById("realtime-cards");
     const canvas = document.getElementById("realtime-flow-canvas");
+    const audioButton = document.getElementById("realtime-audio-button");
     if (!flowRoot || !cardsContainer || !canvas) return;
 
     const ctx = canvas.getContext("2d");
@@ -1018,18 +1056,33 @@
         if (flowState.audioCtx && flowState.audioCtx.state === "suspended") {
           flowState.audioCtx.resume();
         }
+        removeAudioButton();
         return;
       }
 
       try {
         flowState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         flowState.audioEnabled = true;
+        removeAudioButton();
       } catch (_e) {}
+    }
+
+    function removeAudioButton() {
+      if (audioButton && audioButton.parentNode) {
+        audioButton.parentNode.removeChild(audioButton);
+      }
     }
 
     function handleManualSoundTrigger() {
       enableAudio();
       triggerChordSynth(flowState.currentSynthParams);
+    }
+
+    if (audioButton) {
+      audioButton.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+        handleManualSoundTrigger();
+      });
     }
 
     document.body.addEventListener("pointerdown", handleManualSoundTrigger);
