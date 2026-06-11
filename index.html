@@ -961,6 +961,7 @@
   function initRealtimeFlow() {
     const API_URL = "https://elys-realtime.h-e.top/api/realtime";
     const POLL_MS = 60000;
+    const MAX_ACTIVE_CARDS = 12;
     const MAX_SEEN_IDS = 2000;
     const CHORDS_LIBRARY = {
       major7: {
@@ -1290,6 +1291,8 @@
     function physicsLoop() {
       const width = flowRoot.clientWidth;
       const height = flowRoot.clientHeight;
+      const overflow = Math.max(0, flowState.cards.length - MAX_ACTIVE_CARDS);
+      const speedMultiplier = Math.min(4, 1 + overflow * 0.18);
       ctx.clearRect(0, 0, width, height);
 
       for (let i = flowState.cards.length - 1; i >= 0; i--) {
@@ -1313,7 +1316,7 @@
         ctx.fill();
 
         if (!card.isHovered) {
-          card.t += card.speed;
+          card.t += card.speed * speedMultiplier;
           if (card.t >= 1.0) {
             isDead = true;
           } else {
