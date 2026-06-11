@@ -1027,7 +1027,12 @@
       } catch (_e) {}
     }
 
-    document.body.addEventListener("click", enableAudio);
+    function handleManualSoundTrigger() {
+      enableAudio();
+      triggerChordSynth(flowState.currentSynthParams);
+    }
+
+    document.body.addEventListener("pointerdown", handleManualSoundTrigger);
     window.addEventListener("resize", initCanvas);
 
     function getBezierPoint(path, t, width) {
@@ -1142,7 +1147,7 @@
         const params = synthParams || flowState.currentSynthParams;
         const chord = CHORDS_LIBRARY[params.chordType] || CHORDS_LIBRARY.major7;
         const intervalsPool = [...chord.intervals];
-        const voiceCount = Math.floor(Math.random() * 2) + 4;
+        const voiceCount = Math.floor(Math.random() * 2) + 1;
         const notesToPlay = [];
 
         for (let i = 0; i < voiceCount; i++) {
