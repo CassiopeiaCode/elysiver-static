@@ -1267,7 +1267,8 @@
         .sort((a, b) => a.lastPlayedAt - b.lastPlayedAt);
 
       weighted.forEach((item, index) => {
-        item.weight = weighted.length - index;
+        const rank = weighted.length - index;
+        item.weight = rank * rank;
       });
 
       const selected = [];
