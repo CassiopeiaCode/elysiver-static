@@ -1000,6 +1000,7 @@
     const API_URL = "https://elys-realtime.h-e.top/api/realtime";
     const POLL_MS = 60000;
     const MAX_ACTIVE_CARDS = 12;
+    const MAX_RENDERED_CARDS = MAX_ACTIVE_CARDS * 4;
     const MAX_SEEN_IDS = 2000;
     const CHORDS_LIBRARY = {
       major7: {
@@ -1186,7 +1187,9 @@
       events.forEach((event, index) => {
         const timer = setTimeout(() => {
           triggerChordSynth(synthParams);
-          spawnCapsuleCard(event, synthParams);
+          if (flowState.cards.length < MAX_RENDERED_CARDS) {
+            spawnCapsuleCard(event, synthParams);
+          }
         }, index * step);
         flowState.playTimers.push(timer);
       });
