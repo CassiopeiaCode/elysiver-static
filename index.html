@@ -996,6 +996,7 @@
   window.addEventListener("DOMContentLoaded", initRealtimeFlow);
 
   function initRealtimeFlow() {
+    const REALTIME_FLOW_VERSION = "20260611-1524";
     const API_URL = "https://elys-realtime.h-e.top/api/realtime";
     const POLL_MS = 60000;
     const MAX_ACTIVE_CARDS = 12;
@@ -1028,6 +1029,7 @@
     const canvas = document.getElementById("realtime-flow-canvas");
     const audioButton = document.getElementById("realtime-audio-button");
     if (!flowRoot || !cardsContainer || !canvas) return;
+    console.debug("[realtime-flow] version", REALTIME_FLOW_VERSION);
 
     const ctx = canvas.getContext("2d");
     const flowState = {
