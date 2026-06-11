@@ -984,15 +984,7 @@
       }
     };
     const CHORD_TYPES = Object.keys(CHORDS_LIBRARY);
-    const SYNTH_PARAMS = {
-      rootFreq: 130.81,
-      volume: 0.08,
-      timbre: "sine",
-      stereoSpread: 0.8,
-      strumDelay: 50,
-      releaseTime: 1.8,
-      distance: 0.4
-    };
+    const TIMBRE_TYPES = ["sine", "triangle", "sawtooth"];
 
     const flowRoot = document.getElementById("realtime-flow");
     const cardsContainer = document.getElementById("realtime-cards");
@@ -1007,7 +999,7 @@
       audioCtx: null,
       audioEnabled: false,
       playTimers: [],
-      currentChordType: "major7",
+      currentSynthParams: randomSynthParams(),
       dpr: Math.min(window.devicePixelRatio || 1, 2)
     };
 
@@ -1094,19 +1086,36 @@
         const fresh = events
           .map(normalizeEvent)
           .filter((event) => rememberId(event.id));
-        const chordType = pickChordType();
-        flowState.currentChordType = chordType;
-        scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, chordType);
+        const synthParams = randomSynthParams();
+        flowState.currentSynthParams = synthParams;
+        scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, synthParams);
       } catch (error) {
         console.error("[realtime-flow] failed to poll realtime API", error);
       }
     }
 
-    function pickChordType() {
-      return CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)];
+    function randomBetween(min, max) {
+      return min + Math.random() * (max - min);
     }
 
-    function scheduleBatch(events, durationMs, chordType) {
+    function randomStep(min, max, step) {
+      return Math.round(randomBetween(min, max) / step) * step;
+    }
+
+    function randomSynthParams() {
+      return {
+        chordType: CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)],
+        rootFreq: randomBetween(65, 261),
+        volume: randomBetween(0.055, 0.095),
+        timbre: TIMBRE_TYPES[Math.floor(Math.random() * TIMBRE_TYPES.length)],
+        stereoSpread: randomStep(0.35, 1, 0.05),
+        strumDelay: randomStep(0, 150, 10),
+        releaseTime: randomStep(0.8, 3.4, 0.2),
+        distance: randomStep(0.1, 0.75, 0.05)
+      };
+    }
+
+    function scheduleBatch(events, durationMs, synthParams) {
       flowState.playTimers.forEach((timer) => clearTimeout(timer));
       flowState.playTimers = [];
 
@@ -1116,21 +1125,22 @@
       events.forEach((event, index) => {
         const timer = setTimeout(() => {
           if (flowState.cards.length < MAX_ACTIVE_CARDS) {
-            spawnCapsuleCard(event, chordType);
+            spawnCapsuleCard(event, synthParams);
           }
         }, index * step);
         flowState.playTimers.push(timer);
       });
     }
 
-    function triggerChordSynth(chordType) {
+    function triggerChordSynth(synthParams) {
       if (!flowState.audioEnabled || !flowState.audioCtx) return;
       try {
         const audioCtx = flowState.audioCtx;
         if (audioCtx.state === "suspended") audioCtx.resume();
 
         const now = audioCtx.currentTime;
-        const chord = CHORDS_LIBRARY[chordType] || CHORDS_LIBRARY.major7;
+        const params = synthParams || flowState.currentSynthParams;
+        const chord = CHORDS_LIBRARY[params.chordType] || CHORDS_LIBRARY.major7;
         const intervalsPool = [...chord.intervals];
         const voiceCount = Math.floor(Math.random() * 2) + 4;
         const notesToPlay = [];
@@ -1139,7 +1149,7 @@
           if (!intervalsPool.length) break;
           const index = Math.floor(Math.random() * intervalsPool.length);
           const interval = intervalsPool.splice(index, 1)[0];
-          notesToPlay.push(SYNTH_PARAMS.rootFreq * Math.pow(2, interval / 12));
+          notesToPlay.push(params.rootFreq * Math.pow(2, interval / 12));
         }
 
         const masterCompressor = audioCtx.createDynamicsCompressor();
@@ -1150,11 +1160,11 @@
         masterCompressor.release.setValueAtTime(0.25, now);
         masterCompressor.connect(audioCtx.destination);
 
-        if (SYNTH_PARAMS.distance > 0) {
+        if (params.distance > 0) {
           const delayNode = audioCtx.createDelay();
           const delayGain = audioCtx.createGain();
-          delayNode.delayTime.setValueAtTime(SYNTH_PARAMS.distance * 0.8, now);
-          delayGain.gain.setValueAtTime(SYNTH_PARAMS.distance * 0.45, now);
+          delayNode.delayTime.setValueAtTime(params.distance * 0.8, now);
+          delayGain.gain.setValueAtTime(params.distance * 0.45, now);
           masterCompressor.connect(delayNode);
           delayNode.connect(delayGain);
           delayGain.connect(delayNode);
@@ -1162,14 +1172,14 @@
         }
 
         notesToPlay.forEach((freq, index) => {
-          const onsetDelay = (index * SYNTH_PARAMS.strumDelay) / 1000;
+          const onsetDelay = (index * params.strumDelay) / 1000;
           const startTime = now + onsetDelay;
           const osc = audioCtx.createOscillator();
           const filter = audioCtx.createBiquadFilter();
           const noteGain = audioCtx.createGain();
           const panner = audioCtx.createStereoPanner();
 
-          osc.type = SYNTH_PARAMS.timbre;
+          osc.type = params.timbre;
           osc.frequency.setValueAtTime(freq, startTime);
 
           filter.type = "lowpass";
@@ -1177,10 +1187,10 @@
           filter.Q.setValueAtTime(1, startTime);
 
           noteGain.gain.setValueAtTime(0, startTime);
-          noteGain.gain.linearRampToValueAtTime(SYNTH_PARAMS.volume, startTime + 0.05);
-          noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + SYNTH_PARAMS.releaseTime);
+          noteGain.gain.linearRampToValueAtTime(params.volume, startTime + 0.05);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + params.releaseTime);
 
-          const randPan = (Math.random() * 2 - 1) * SYNTH_PARAMS.stereoSpread;
+          const randPan = (Math.random() * 2 - 1) * params.stereoSpread;
           panner.pan.setValueAtTime(randPan, startTime);
 
           osc.connect(filter);
@@ -1189,12 +1199,12 @@
           panner.connect(masterCompressor);
 
           osc.start(startTime);
-          osc.stop(startTime + SYNTH_PARAMS.releaseTime + 0.1);
+          osc.stop(startTime + params.releaseTime + 0.1);
         });
       } catch (_e) {}
     }
 
-    function spawnCapsuleCard(data, chordType) {
+    function spawnCapsuleCard(data, synthParams) {
       const reqId = `cap_${data.id}_${Math.random().toString(36).slice(2, 6)}`;
       const isError = data.latency >= 180;
       const statusClass = isError ? "slow" : (data.latency >= 60 ? "warn" : "good");
@@ -1272,7 +1282,7 @@
       });
 
       flowState.cards.push(cardObj);
-      triggerChordSynth(chordType || flowState.currentChordType);
+      triggerChordSynth(synthParams || flowState.currentSynthParams);
     }
 
     function physicsLoop() {
