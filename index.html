@@ -732,9 +732,9 @@ top: calc(50% + 2rem);
 
     let isExploding = false;
     let explosionStartedAt = 0;
-    let clickCount = 0;
-    let clickTimer = null;
-    const clickWindowMs = 1800;
+const clickWindowMs = 5000;
+const clickTriggerCount = 5;
+let clickTimes = [];
     const redirectUrl = "https://present.h-e.top/?step=0&codes_file=secret-index-26-3-9.txt";
 
     function rand(min, max) {
@@ -818,21 +818,23 @@ top: calc(50% + 2rem);
       }
     }
 
-    function registerRapidClick() {
-      if (isExploding) return;
+function registerRapidClick() {
+  if (isExploding) return;
 
-      clickCount += 1;
+  const now = performance.now();
 
-      if (clickTimer) clearTimeout(clickTimer);
-      clickTimer = setTimeout(() => {
-        clickCount = 0;
-      }, clickWindowMs);
+  // 只保留最近 5 秒内的点击
+  clickTimes = clickTimes.filter((time) => now - time <= clickWindowMs);
 
-      if (clickCount >= 5) {
-        clickCount = 0;
-        triggerUniverseExplosion();
-      }
-    }
+  // 记录本次点击
+  clickTimes.push(now);
+
+  // 最近 5 秒内达到 5 次，才触发跳转
+  if (clickTimes.length >= clickTriggerCount) {
+    clickTimes = [];
+    triggerUniverseExplosion();
+  }
+}
 
     window.addEventListener("pointerdown", registerRapidClick);
 
