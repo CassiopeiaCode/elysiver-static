@@ -1149,9 +1149,13 @@ function registerRapidClick() {
         const fresh = events
           .map(normalizeEvent)
           .filter((event) => rememberId(event.id));
-        const synthParams = randomSynthParams();
-        flowState.currentSynthParams = synthParams;
-        scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, synthParams);
+const synthParams = randomSynthParams();
+flowState.currentSynthParams = synthParams;
+
+// 每次生成 60s 批次预设时打印，方便复现
+logSynthPreset(synthParams);
+
+scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, synthParams);
       } catch (error) {
         console.error("[realtime-flow] failed to poll realtime API", error);
       }
@@ -1178,7 +1182,38 @@ function registerRapidClick() {
         noteLastPlayedAt: new Map()
       };
     }
+function serializeSynthPreset(params) {
+  return {
+    chordType: params.chordType,
+    rootFreq: Number(params.rootFreq.toFixed(3)),
+    volume: params.volume,
+    timbre: params.timbre,
+    stereoSpread: params.stereoSpread,
+    strumDelay: params.strumDelay,
+    releaseTime: params.releaseTime,
+    distance: params.distance
+  };
+}
 
+function logSynthPreset(params) {
+  const preset = serializeSynthPreset(params);
+
+  console.log(
+    `[realtime-flow preset] ${new Date().toISOString()}`,
+    preset
+  );
+
+  console.log(
+    `[realtime-flow preset json]\n${JSON.stringify(preset, null, 2)}`
+  );
+
+  window.__realtimeLastSynthPreset = preset;
+  window.__realtimePresetHistory = window.__realtimePresetHistory || [];
+  window.__realtimePresetHistory.push({
+    time: new Date().toISOString(),
+    preset
+  });
+}
     function scheduleBatch(events, durationMs, synthParams) {
       flowState.playTimers.forEach((timer) => clearTimeout(timer));
       flowState.playTimers = [];
