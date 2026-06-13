@@ -1226,36 +1226,45 @@
           delayNode.connect(audioCtx.destination);
         }
 
-        notesToPlay.forEach((freq, index) => {
-          const onsetDelay = (index * params.strumDelay) / 1000;
-          const startTime = now + onsetDelay;
-          const osc = audioCtx.createOscillator();
-          const filter = audioCtx.createBiquadFilter();
-          const noteGain = audioCtx.createGain();
-          const panner = audioCtx.createStereoPanner();
+        function playOneVoice(freq, startTime, panValue) {
+  const osc = audioCtx.createOscillator();
+  const filter = audioCtx.createBiquadFilter();
+  const noteGain = audioCtx.createGain();
+  const panner = audioCtx.createStereoPanner();
 
-          osc.type = params.timbre;
-          osc.frequency.setValueAtTime(freq, startTime);
+  osc.type = params.timbre;
+  osc.frequency.setValueAtTime(freq, startTime);
 
-          filter.type = "lowpass";
-          filter.frequency.setValueAtTime(freq * 2.8, startTime);
-          filter.Q.setValueAtTime(1, startTime);
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(freq * 2.8, startTime);
+  filter.Q.setValueAtTime(1, startTime);
 
-          noteGain.gain.setValueAtTime(0, startTime);
-          noteGain.gain.linearRampToValueAtTime(params.volume, startTime + 0.05);
-          noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + params.releaseTime);
+  noteGain.gain.setValueAtTime(0, startTime);
+  noteGain.gain.linearRampToValueAtTime(params.volume, startTime + 0.05);
+  noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + params.releaseTime);
 
-          const randPan = (Math.random() * 2 - 1) * params.stereoSpread;
-          panner.pan.setValueAtTime(randPan, startTime);
+  panner.pan.setValueAtTime(panValue, startTime);
 
-          osc.connect(filter);
-          filter.connect(noteGain);
-          noteGain.connect(panner);
-          panner.connect(masterCompressor);
+  osc.connect(filter);
+  filter.connect(noteGain);
+  noteGain.connect(panner);
+  panner.connect(masterCompressor);
 
-          osc.start(startTime);
-          osc.stop(startTime + params.releaseTime + 0.1);
-        });
+  osc.start(startTime);
+  osc.stop(startTime + params.releaseTime + 0.1);
+}
+
+notesToPlay.forEach((freq, index) => {
+  const onsetDelay = (index * params.strumDelay) / 1000;
+  const startTime = now + onsetDelay;
+  const randPan = (Math.random() * 2 - 1) * params.stereoSpread;
+
+  // 原音
+  playOneVoice(freq, startTime, randPan);
+
+  // 高 8 度辅助音，频率翻倍，音量相同
+  playOneVoice(freq * 2, startTime, randPan);
+});
       } catch (_e) {}
     }
 
