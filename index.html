@@ -1025,7 +1025,18 @@ function registerRapidClick() {
       }
     };
     const CHORD_TYPES = Object.keys(CHORDS_LIBRARY);
-    const TIMBRE_TYPES = ["sine", "triangle", "sawtooth"];
+    const TIMBRE_PRESETS = {
+      sine: { waveform: "sine" },
+      triangle: { waveform: "triangle" },
+      sawtooth: { waveform: "sawtooth" },
+      warm: { harmonics: [0, 1.00, 0.35, 0.18, 0.08, 0.04] },
+      bright: { harmonics: [0, 1.00, 0.75, 0.50, 0.35, 0.22, 0.14] },
+      organ: { harmonics: [0, 1.00, 0.00, 0.80, 0.00, 0.45, 0.00, 0.25] },
+      bell: { harmonics: [0, 1.00, 0.20, 0.55, 0.12, 0.35, 0.08, 0.22] },
+      hollow: { harmonics: [0, 1.00, 0.00, 0.45, 0.00, 0.22, 0.00, 0.12] }
+    };
+    const TIMBRE_TYPES = Object.keys(TIMBRE_PRESETS);
+    const TIMBRE_WAVE_CACHE = new Map();
 
     const flowRoot = document.getElementById("realtime-flow");
     const cardsContainer = document.getElementById("realtime-cards");
@@ -1169,6 +1180,32 @@ scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, synthParams);
       return Math.round(randomBetween(min, max) / step) * step;
     }
 
+    function applyTimbrePreset(audioCtx, osc, timbreName) {
+      const preset = TIMBRE_PRESETS[timbreName] || TIMBRE_PRESETS.sine;
+      if (preset.waveform) {
+        osc.type = preset.waveform;
+        return;
+      }
+
+      if (preset.harmonics) {
+        const cacheKey = timbreName;
+        let wave = TIMBRE_WAVE_CACHE.get(cacheKey);
+        if (!wave) {
+          const real = new Float32Array(preset.harmonics.length);
+          const imag = new Float32Array(preset.harmonics.length);
+          preset.harmonics.forEach((amp, harmonic) => {
+            imag[harmonic] = amp;
+          });
+          wave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: false });
+          TIMBRE_WAVE_CACHE.set(cacheKey, wave);
+        }
+        osc.setPeriodicWave(wave);
+        return;
+      }
+
+      osc.type = "sine";
+    }
+
     function randomSynthParams() {
       return {
         chordType: CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)],
@@ -1269,7 +1306,7 @@ function logSynthPreset(params) {
   const noteGain = audioCtx.createGain();
   const panner = audioCtx.createStereoPanner();
 
-  osc.type = params.timbre;
+  applyTimbrePreset(audioCtx, osc, params.timbre);
   osc.frequency.setValueAtTime(freq, startTime);
 
   filter.type = "lowpass";
