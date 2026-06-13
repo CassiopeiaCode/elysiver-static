@@ -1194,7 +1194,8 @@ scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, synthParams);
           const real = new Float32Array(preset.harmonics.length);
           const imag = new Float32Array(preset.harmonics.length);
           preset.harmonics.forEach((amp, harmonic) => {
-            real[harmonic] = amp;
+            // Harmonic strengths are encoded as sine-series partial amplitudes.
+            imag[harmonic] = amp;
           });
           wave = audioCtx.createPeriodicWave(real, imag, { disableNormalization: false });
           TIMBRE_WAVE_CACHE.set(cacheKey, wave);
