@@ -1172,10 +1172,10 @@ scheduleBatch(fresh, Number(payload.refresh_seconds || 60) * 1000, synthParams);
     function randomSynthParams() {
       return {
         chordType: CHORD_TYPES[Math.floor(Math.random() * CHORD_TYPES.length)],
-        rootFreq: randomBetween(70, 200),
+        rootFreq: randomBetween(65, 200),
         volume: 0.08,
         timbre: TIMBRE_TYPES[Math.floor(Math.random() * TIMBRE_TYPES.length)],
-        stereoSpread: randomStep(0.35, 1, 0.05),
+stereoSpread: randomStep(0.2, 0.55, 0.05),
         strumDelay: randomStep(0, 45, 5),
         releaseTime: randomStep(0.25, 0.9, 0.05),
         distance: randomStep(0, 0.22, 0.02),
