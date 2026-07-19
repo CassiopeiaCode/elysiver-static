@@ -61,6 +61,123 @@
       gap: 10px;
       pointer-events: auto;
     }
+    #mc-player-status-wrap {
+      position: relative;
+      top: 8px;
+    }
+    #mc-player-status {
+      height: 30px;
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid rgba(35, 27, 18, 0.12);
+      border-radius: 999px;
+      background: rgba(255, 252, 246, 0.7);
+      color: rgba(35, 27, 18, 0.7);
+      box-shadow: 0 1px 2px rgba(94, 58, 16, 0.04), 0 5px 14px rgba(94, 58, 16, 0.06);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    }
+    #mc-player-status:hover,
+    #mc-player-status:focus-visible {
+      outline: none;
+      border-color: rgba(245, 158, 11, 0.36);
+      background: rgba(255, 252, 246, 0.94);
+      box-shadow: 0 1px 2px rgba(94, 58, 16, 0.05), 0 8px 18px rgba(94, 58, 16, 0.1);
+    }
+    #mc-player-status-dot {
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: #a8a29e;
+      box-shadow: 0 0 0 3px rgba(168, 162, 158, 0.12);
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+    #mc-player-status-wrap.is-online #mc-player-status-dot {
+      background: #65a30d;
+      box-shadow: 0 0 0 3px rgba(101, 163, 13, 0.12);
+    }
+    #mc-player-status-wrap.is-offline #mc-player-status-dot {
+      background: #c2410c;
+      box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.12);
+    }
+    #mc-player-panel {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: min(260px, calc(100vw - 28px));
+      padding: 12px;
+      border: 1px solid rgba(35, 27, 18, 0.11);
+      border-radius: 10px;
+      background: rgba(255, 252, 246, 0.96);
+      box-shadow: 0 14px 34px rgba(94, 58, 16, 0.14);
+      backdrop-filter: blur(12px);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-5px);
+      transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+      pointer-events: none;
+    }
+    #mc-player-status-wrap:hover #mc-player-panel,
+    #mc-player-status-wrap:focus-within #mc-player-panel,
+    #mc-player-status-wrap.is-open #mc-player-panel {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .mc-player-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 9px;
+      color: rgba(35, 27, 18, 0.84);
+      font-family: "Noto Sans SC", "Plus Jakarta Sans", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    #mc-player-updated {
+      color: rgba(35, 27, 18, 0.38);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+      font-weight: 500;
+    }
+    #mc-player-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 24px;
+      max-height: 116px;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+    .mc-player-name {
+      max-width: 100%;
+      padding: 5px 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.09);
+      color: rgba(78, 47, 13, 0.82);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mc-player-empty {
+      align-self: center;
+      color: rgba(35, 27, 18, 0.43);
+      font-family: "Noto Sans SC", "Plus Jakarta Sans", sans-serif;
+      font-size: 10px;
+    }
     #play-mc-button {
       position: relative;
       top: 8px;
@@ -393,6 +510,8 @@
       .top-banner { padding: 0 14px; height: 48px; }
       .top-banner-actions { gap: 8px; }
       #play-mc-button { min-width: 68px; height: 28px; padding: 0 10px; }
+      #mc-player-status { height: 28px; padding: 0 9px; }
+      #mc-player-panel { position: fixed; top: 52px; right: 12px; }
     }
   </style>
 </head>
@@ -401,6 +520,19 @@
 <div class="top-banner">
   <div class="brand" id="elys-brand">ELYS IVER</div>
   <div class="top-banner-actions">
+    <div id="mc-player-status-wrap" class="is-loading">
+      <button id="mc-player-status" type="button" aria-expanded="false" aria-controls="mc-player-panel" title="查看 Minecraft 在线玩家">
+        <span id="mc-player-status-dot" aria-hidden="true"></span>
+        <span id="mc-player-count">MC · --</span>
+      </button>
+      <div id="mc-player-panel" role="status" aria-live="polite">
+        <div class="mc-player-panel-head">
+          <span id="mc-player-panel-title">在线玩家</span>
+          <span id="mc-player-updated">SYNC…</span>
+        </div>
+        <div id="mc-player-list"><span class="mc-player-empty">正在获取服务器状态…</span></div>
+      </div>
+    </div>
     <button id="play-mc-button" type="button" title="登录并在新窗口打开 Minecraft">玩 MC</button>
     <div class="meta" id="elys-live-meta">LIVE</div>
   </div>
@@ -515,6 +647,116 @@
         }
         resetButton(button);
       });
+    });
+  })();
+</script>
+<script>
+  (() => {
+    const PLAYER_API_URL = "https://elys-mc-game.c.h-e.top/api/players";
+    const ACTIVE_POLL_MS = 15000;
+    const HIDDEN_POLL_MS = 60000;
+    let pollTimer = null;
+    let pollInFlight = false;
+
+    function setPlayerList(list, players, emptyText) {
+      list.replaceChildren();
+      if (!players.length) {
+        const empty = document.createElement("span");
+        empty.className = "mc-player-empty";
+        empty.textContent = emptyText;
+        list.appendChild(empty);
+        return;
+      }
+      players.forEach((name) => {
+        const player = document.createElement("span");
+        player.className = "mc-player-name";
+        player.textContent = name;
+        player.title = name;
+        list.appendChild(player);
+      });
+    }
+
+    function formatUpdatedAt(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "刚刚";
+      return date.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function renderStatus(payload) {
+      const wrap = document.getElementById("mc-player-status-wrap");
+      const count = document.getElementById("mc-player-count");
+      const title = document.getElementById("mc-player-panel-title");
+      const updated = document.getElementById("mc-player-updated");
+      const list = document.getElementById("mc-player-list");
+      if (!wrap || !count || !title || !updated || !list) return;
+
+      const players = Array.isArray(payload.players)
+        ? payload.players.filter((name) => typeof name === "string" && name.trim()).map((name) => name.trim())
+        : [];
+      const onlineCount = Math.max(0, Number(payload.online_count) || players.length);
+      const maxPlayers = Math.max(0, Number(payload.max_players) || 0);
+      const online = payload.online === true;
+
+      wrap.classList.remove("is-loading", "is-online", "is-offline");
+      wrap.classList.add(online ? "is-online" : "is-offline");
+      count.textContent = online ? `MC · ${onlineCount}/${maxPlayers || "?"}` : "MC · OFF";
+      title.textContent = online ? `在线玩家 · ${onlineCount}` : "服务器暂不可用";
+      updated.textContent = formatUpdatedAt(payload.updated_at);
+      setPlayerList(list, players, online ? "暂无玩家在线" : "暂时无法获取玩家列表");
+    }
+
+    function renderError() {
+      renderStatus({
+        online: false,
+        online_count: 0,
+        max_players: 0,
+        players: [],
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    async function pollPlayers() {
+      if (pollInFlight) return;
+      pollInFlight = true;
+      try {
+        const response = await fetch(PLAYER_API_URL, { cache: "no-store", mode: "cors" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        renderStatus(await response.json());
+      } catch (error) {
+        console.error("[minecraft-players] failed to fetch player status", error);
+        renderError();
+      } finally {
+        pollInFlight = false;
+      }
+    }
+
+    function schedulePolling() {
+      if (pollTimer) window.clearInterval(pollTimer);
+      pollTimer = window.setInterval(pollPlayers, document.hidden ? HIDDEN_POLL_MS : ACTIVE_POLL_MS);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const wrap = document.getElementById("mc-player-status-wrap");
+      const button = document.getElementById("mc-player-status");
+      if (!wrap || !button) return;
+
+      button.addEventListener("click", () => {
+        const open = wrap.classList.toggle("is-open");
+        button.setAttribute("aria-expanded", String(open));
+        if (open) pollPlayers();
+      });
+      document.addEventListener("click", (event) => {
+        if (wrap.contains(event.target)) return;
+        wrap.classList.remove("is-open");
+        button.setAttribute("aria-expanded", "false");
+      });
+      document.addEventListener("visibilitychange", () => {
+        schedulePolling();
+        if (!document.hidden) pollPlayers();
+      });
+
+      pollPlayers();
+      schedulePolling();
     });
   })();
 </script>
