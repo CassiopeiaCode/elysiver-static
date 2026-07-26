@@ -318,7 +318,7 @@
 
     #realtime-audio-button {
       position: fixed;
-      right: 16px;
+      left: 16px;
       bottom: 16px;
       z-index: 40;
       width: 32px;
@@ -504,7 +504,7 @@
 
     #ff-chat-open {
       position: fixed;
-      left: 20px;
+      right: 20px;
       bottom: 20px;
       z-index: 101;
       height: 30px;
@@ -529,7 +529,7 @@
     }
     #ff-chat-panel {
       position: fixed;
-      left: 20px;
+      right: 20px;
       bottom: 60px;
       z-index: 100;
       width: min(390px, calc(100vw - 28px));
@@ -545,7 +545,7 @@
       opacity: 0;
       visibility: hidden;
       transform: translateY(10px) scale(0.98);
-      transform-origin: bottom left;
+      transform-origin: bottom right;
       transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
       pointer-events: none;
     }
@@ -567,15 +567,15 @@
       .grain { opacity: 0.02; }
       .spacer { width: clamp(72px, 16vw, 140px); }
       #elys-log-wrap { left: 12px; right: 12px; width: auto; bottom: 52px; }
-      #realtime-audio-button { right: 12px; bottom: 12px; }
+      #realtime-audio-button { left: 12px; bottom: 12px; }
       .top-banner { padding: 0 14px; height: 48px; }
       .top-banner-actions { gap: 8px; }
       #play-mc-button { min-width: 68px; height: 28px; padding: 0 10px; }
       #mc-player-status { height: 28px; padding: 0 9px; }
       #mc-player-panel { position: fixed; top: 52px; right: 12px; }
       #ff-chat-open { height: 28px; padding: 0 10px; }
-      #ff-chat-open { left: 8px; bottom: 8px; }
-      #ff-chat-panel { left: 8px; bottom: 46px; width: calc(100vw - 16px); height: min(620px, calc(100svh - 54px)); }
+      #ff-chat-open { right: 8px; bottom: 8px; }
+      #ff-chat-panel { right: 8px; bottom: 46px; width: calc(100vw - 16px); height: min(620px, calc(100svh - 54px)); }
     }
   </style>
 </head>
