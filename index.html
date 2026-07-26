@@ -502,6 +502,63 @@
       border-color: rgba(245, 158, 11, 0.55);
     }
 
+    #ff-chat-open {
+      height: 30px;
+      padding: 0 12px;
+      border: 1px solid rgba(214, 151, 112, 0.28);
+      border-radius: 999px;
+      background: rgba(255, 252, 246, 0.78);
+      color: rgba(78, 47, 13, 0.82);
+      box-shadow: 0 1px 2px rgba(94, 58, 16, 0.04), 0 5px 14px rgba(94, 58, 16, 0.06);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      font-family: "Noto Sans SC", "Plus Jakarta Sans", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+    #ff-chat-open:hover, #ff-chat-open:focus-visible {
+      outline: none;
+      border-color: rgba(214, 151, 112, 0.58);
+      background: rgba(255, 252, 246, 0.98);
+      transform: translateY(-1px);
+    }
+    #ff-chat-panel {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 100;
+      width: min(390px, calc(100vw - 28px));
+      height: min(570px, calc(100vh - 40px));
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      border: 1px solid rgba(35, 27, 18, 0.12);
+      border-radius: 10px;
+      background: rgba(255, 252, 246, 0.97);
+      box-shadow: 0 22px 64px rgba(94, 58, 16, 0.2);
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px) scale(0.98);
+      transform-origin: bottom right;
+      transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
+      pointer-events: none;
+    }
+    #ff-chat-panel.is-open { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+    .ff-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 16px; border-bottom: 1px solid rgba(35, 27, 18, 0.09); }
+    .ff-chat-title { color: rgba(35, 27, 18, 0.86); font-family: "Noto Sans SC", sans-serif; font-size: 13px; font-weight: 700; }
+    #ff-chat-close { width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: rgba(35, 27, 18, 0.5); cursor: pointer; font-size: 22px; line-height: 1; }
+    #ff-chat-messages { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; padding: 16px; user-select: text; scrollbar-width: thin; }
+    .ff-chat-bubble { max-width: 86%; padding: 10px 12px; border-radius: 10px; font-family: "Noto Sans SC", "Plus Jakarta Sans", sans-serif; font-size: 13px; line-height: 1.62; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .ff-chat-bubble.ff { align-self: flex-start; border: 1px solid rgba(35, 27, 18, 0.09); background: rgba(250, 244, 236, 0.9); color: rgba(35, 27, 18, 0.82); }
+    .ff-chat-bubble.me { align-self: flex-end; background: #d69770; color: #fffaf4; }
+    #ff-chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px; border-top: 1px solid rgba(35, 27, 18, 0.09); }
+    #ff-chat-input { min-width: 0; padding: 10px 11px; border: 1px solid rgba(35, 27, 18, 0.14); border-radius: 10px; outline: none; background: rgba(255,255,255,0.72); color: rgba(35,27,18,0.88); font: 13px "Noto Sans SC", sans-serif; user-select: text; }
+    #ff-chat-input:focus { border-color: rgba(214,151,112,0.68); box-shadow: 0 0 0 3px rgba(214,151,112,0.1); }
+    #ff-chat-send { padding: 0 15px; border: 0; border-radius: 10px; background: #d69770; color: white; cursor: pointer; font-family: "Noto Sans SC", sans-serif; font-weight: 700; }
+    #ff-chat-send:disabled { cursor: wait; opacity: 0.55; }
+
     @media (max-width: 720px) {
       .grain { opacity: 0.02; }
       .spacer { width: clamp(72px, 16vw, 140px); }
@@ -512,6 +569,8 @@
       #play-mc-button { min-width: 68px; height: 28px; padding: 0 10px; }
       #mc-player-status { height: 28px; padding: 0 9px; }
       #mc-player-panel { position: fixed; top: 52px; right: 12px; }
+      #ff-chat-open { height: 28px; padding: 0 10px; }
+      #ff-chat-panel { right: 8px; bottom: 8px; width: calc(100vw - 16px); height: min(620px, calc(100svh - 16px)); }
     }
   </style>
 </head>
@@ -520,6 +579,7 @@
 <div class="top-banner">
   <div class="brand" id="elys-brand">ELYS IVER</div>
   <div class="top-banner-actions">
+    <button id="ff-chat-open" type="button" aria-expanded="false" aria-controls="ff-chat-panel">和 FF 聊聊</button>
     <div id="mc-player-status-wrap" class="is-loading">
       <button id="mc-player-status" type="button" aria-expanded="false" aria-controls="mc-player-panel" title="查看 Minecraft 在线玩家">
         <span id="mc-player-status-dot" aria-hidden="true"></span>
@@ -570,6 +630,93 @@
 </div>
 
 <div id="white-flash"></div>
+
+<section id="ff-chat-panel" aria-label="和 FF 聊聊" aria-hidden="true">
+  <div class="ff-chat-head"><span class="ff-chat-title">和 FF 聊聊</span><button id="ff-chat-close" type="button" aria-label="关闭">×</button></div>
+  <div id="ff-chat-messages" aria-live="polite"><div class="ff-chat-bubble ff" id="ff-chat-greeting"></div></div>
+  <form id="ff-chat-form"><input id="ff-chat-input" maxlength="1000" autocomplete="off" placeholder="对 FF 说点什么…" aria-label="消息"><button id="ff-chat-send" type="submit">发送</button></form>
+</section>
+
+<script>
+  (() => {
+    const endpoint = "https://e.c.h-e.top/v1/chat/completions";
+    const publicKey = "sk-iUUqFQLevQRnZ9DvgW9G2wsDXNhf2UjngtJFZ9g72MmLnoan";
+    const greetings = [
+      "喵w? 有人来找ff了欸w",
+      "唔，ff刚刚在摸鱼呢w（）",
+      "泥要ff帮忙做什么呀w",
+      "ovO? 是新的佬友吗w",
+      "摸摸w ´ₒ⦁⩊⦁ₒ`",
+      "呜呜呜，泥不是猫猫头吧w",
+      "泥要是好人的话就抱抱ff吧w ˶>ᗜ<˶",
+    ];
+    const panel = document.getElementById("ff-chat-panel");
+    const openButton = document.getElementById("ff-chat-open");
+    const closeButton = document.getElementById("ff-chat-close");
+    const form = document.getElementById("ff-chat-form");
+    const input = document.getElementById("ff-chat-input");
+    const sendButton = document.getElementById("ff-chat-send");
+    const messages = document.getElementById("ff-chat-messages");
+    const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+    const history = [{ role: "assistant", content: greeting }];
+    document.getElementById("ff-chat-greeting").textContent = greeting;
+
+    function setOpen(open) {
+      panel.classList.toggle("is-open", open);
+      panel.setAttribute("aria-hidden", String(!open));
+      openButton.setAttribute("aria-expanded", String(open));
+      if (open) input.focus();
+    }
+
+    function addMessage(text, role) {
+      const bubble = document.createElement("div");
+      bubble.className = `ff-chat-bubble ${role}`;
+      bubble.textContent = text;
+      messages.appendChild(bubble);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    openButton.addEventListener("click", () => setOpen(!panel.classList.contains("is-open")));
+    closeButton.addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") setOpen(false); });
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const text = input.value.trim();
+      if (!text || sendButton.disabled) return;
+      addMessage(text, "me");
+      history.push({ role: "user", content: text });
+      input.value = "";
+      sendButton.disabled = true;
+      sendButton.textContent = "…";
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { authorization: `Bearer ${publicKey}`, "content-type": "application/json" },
+          body: JSON.stringify({
+            model: "0wFF",
+            messages: [
+              { role: "system", content: "你是 FF。请自然、友好地与访客聊天，默认使用中文回答。" },
+              ...history.slice(-12),
+            ],
+            stream: false,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error?.message || "FF 暂时没有回应");
+        const reply = data?.choices?.[0]?.message?.content;
+        if (typeof reply !== "string" || !reply.trim()) throw new Error("FF 返回了空消息");
+        addMessage(reply.trim(), "ff");
+        history.push({ role: "assistant", content: reply.trim() });
+      } catch (error) {
+        addMessage(error.message || "FF 暂时没有回应", "ff");
+      } finally {
+        sendButton.disabled = false;
+        sendButton.textContent = "发送";
+        input.focus();
+      }
+    });
+  })();
+</script>
 
 <script>
   (() => {
