@@ -503,6 +503,10 @@
     }
 
     #ff-chat-open {
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      z-index: 101;
       height: 30px;
       padding: 0 12px;
       border: 1px solid rgba(214, 151, 112, 0.28);
@@ -525,8 +529,8 @@
     }
     #ff-chat-panel {
       position: fixed;
-      right: 20px;
-      bottom: 20px;
+      left: 20px;
+      bottom: 60px;
       z-index: 100;
       width: min(390px, calc(100vw - 28px));
       height: min(570px, calc(100vh - 40px));
@@ -541,7 +545,7 @@
       opacity: 0;
       visibility: hidden;
       transform: translateY(10px) scale(0.98);
-      transform-origin: bottom right;
+      transform-origin: bottom left;
       transition: opacity 0.18s ease, visibility 0.18s ease, transform 0.18s ease;
       pointer-events: none;
     }
@@ -570,7 +574,8 @@
       #mc-player-status { height: 28px; padding: 0 9px; }
       #mc-player-panel { position: fixed; top: 52px; right: 12px; }
       #ff-chat-open { height: 28px; padding: 0 10px; }
-      #ff-chat-panel { right: 8px; bottom: 8px; width: calc(100vw - 16px); height: min(620px, calc(100svh - 16px)); }
+      #ff-chat-open { left: 8px; bottom: 8px; }
+      #ff-chat-panel { left: 8px; bottom: 46px; width: calc(100vw - 16px); height: min(620px, calc(100svh - 54px)); }
     }
   </style>
 </head>
@@ -579,7 +584,6 @@
 <div class="top-banner">
   <div class="brand" id="elys-brand">ELYS IVER</div>
   <div class="top-banner-actions">
-    <button id="ff-chat-open" type="button" aria-expanded="false" aria-controls="ff-chat-panel">和 FF 聊聊</button>
     <div id="mc-player-status-wrap" class="is-loading">
       <button id="mc-player-status" type="button" aria-expanded="false" aria-controls="mc-player-panel" title="查看 Minecraft 在线玩家">
         <span id="mc-player-status-dot" aria-hidden="true"></span>
@@ -631,6 +635,7 @@
 
 <div id="white-flash"></div>
 
+<button id="ff-chat-open" type="button" aria-expanded="false" aria-controls="ff-chat-panel">和 FF 聊聊</button>
 <section id="ff-chat-panel" aria-label="和 FF 聊聊" aria-hidden="true">
   <div class="ff-chat-head"><span class="ff-chat-title">和 FF 聊聊</span><button id="ff-chat-close" type="button" aria-label="关闭">×</button></div>
   <div id="ff-chat-messages" aria-live="polite"><div class="ff-chat-bubble ff" id="ff-chat-greeting"></div></div>
