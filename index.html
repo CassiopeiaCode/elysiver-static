@@ -61,6 +61,7 @@
       gap: 10px;
       pointer-events: auto;
     }
+    /* MC server UI disabled; styles retained here for easy restoration.
     #mc-player-status-wrap {
       position: relative;
       top: 8px;
@@ -207,6 +208,7 @@
       cursor: wait;
       opacity: 0.62;
     }
+    */
 
     #scene-root {
       position: absolute;
@@ -509,9 +511,11 @@
       #realtime-audio-button { left: 12px; bottom: 12px; }
       .top-banner { padding: 0 14px; height: 48px; }
       .top-banner-actions { gap: 8px; }
+      /* MC server UI disabled; styles retained here for easy restoration.
       #play-mc-button { min-width: 68px; height: 28px; padding: 0 10px; }
       #mc-player-status { height: 28px; padding: 0 9px; }
       #mc-player-panel { position: fixed; top: 52px; right: 12px; }
+      */
     }
   </style>
 </head>
@@ -520,6 +524,7 @@
 <div class="top-banner">
   <div class="brand" id="elys-brand">ELYS IVER</div>
   <div class="top-banner-actions">
+    <!-- MC server UI disabled until the Minecraft stack is restored.
     <div id="mc-player-status-wrap" class="is-loading">
       <button id="mc-player-status" type="button" aria-expanded="false" aria-controls="mc-player-panel" title="查看 Minecraft 在线玩家">
         <span id="mc-player-status-dot" aria-hidden="true"></span>
@@ -534,6 +539,7 @@
       </div>
     </div>
     <button id="play-mc-button" type="button" title="登录并在新窗口打开 Minecraft">玩 MC</button>
+    -->
     <div class="meta" id="elys-live-meta">LIVE</div>
   </div>
 </div>
@@ -571,6 +577,7 @@
 
 <div id="white-flash"></div>
 
+<!-- MC server login integration disabled; retained for restoration.
 <script>
   (() => {
     const MC_URL = "https://elys-mc-game.c.h-e.top/";
@@ -650,6 +657,8 @@
     });
   })();
 </script>
+-->
+<!-- MC server player-status integration disabled; retained for restoration.
 <script>
   (() => {
     const PLAYER_API_URL = "https://elys-mc-game.c.h-e.top/api/players";
@@ -762,6 +771,7 @@
     });
   })();
 </script>
+-->
 <script>
   window.addEventListener("DOMContentLoaded", init3DScene);
 
