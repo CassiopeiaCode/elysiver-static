@@ -10,7 +10,7 @@
   const colors = ['#bc914c', '#b78160', '#aa8a71'];
   const names = ['上层 · 弦线', '中层 · 节律', '下层 · 触感'];
   const hints = ['移动指针，轻拨流线', '移动或轻点，让节律共振', '轻推、按住拖拽，松手感受回弹'];
-  const pointer = {x: 0, y: 0, tx: 0, ty: 0, active: false, id: null};
+  const pointer = {x: 0, y: 0, tx: 0, ty: 0, active: false, id: null, type: 'mouse'};
   let width, height, bodies = [], ripples = [], grabbed = null;
   let weights = [1, 0, 0], zone = -1, time = 0, last = 0, beat = 0;
   let audio = null, audible = false, lastTone = 0;
@@ -46,32 +46,45 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     pointer.x = pointer.tx = width / 2; pointer.y = pointer.ty = height * 0.2;
     const count = width < 720 ? 10 : 18;
+    const cols = width < 720 ? 4 : 6;
+    const rows = Math.ceil(count / cols);
     bodies = Array.from({length: count}, (_, i) => {
       const r = Math.min(32 + (i % 4) * 7, width / 9, height / 9);
-      return {x: width * (0.12 + (i % 6) * 0.15), y: height * (0.18 + Math.floor(i / 6) * 0.29),
+      return {x: width * (i % cols + 0.5) / cols, y: height * (0.72 + Math.floor(i / cols) / rows * 0.17),
         vx: 0, vy: 0, r, phase: i * 2.4, deformation: 0, dv: 0, angle: 0, touched: false};
     });
     ripples = [];
   }
   function move(e) {
+    if (pointer.id !== null && e.pointerId !== pointer.id) return;
+    if (e.isPrimary === false) return;
+    pointer.type = e.pointerType || 'mouse';
     pointer.active = true; pointer.tx = clamp(e.clientX, 0, width); pointer.ty = clamp(e.clientY, 0, height);
   }
   function release() {
     if (pointer.id !== null && canvas.hasPointerCapture(pointer.id)) canvas.releasePointerCapture(pointer.id);
-    pointer.id = null; grabbed = null; canvas.classList.remove('is-grabbing');
+    pointer.id = null; grabbed = null;
+    if (pointer.type === 'touch') pointer.active = false;
+    canvas.classList.remove('is-grabbing');
   }
   window.addEventListener('pointermove', move, {passive: true});
   canvas.addEventListener('pointerdown', e => {
-    if (!e.isPrimary || e.button !== 0) return;
+    if (!e.isPrimary || e.button !== 0 || pointer.id !== null) return;
     move(e); pointer.x = pointer.tx; pointer.y = pointer.ty;
-    if (e.clientY / height >= 2 / 3) {
-      grabbed = [...bodies].reverse().find(b => Math.hypot(b.x - pointer.x, b.y - pointer.y) < b.r + 14) || null;
-      if (grabbed) {pointer.id = e.pointerId; canvas.setPointerCapture(e.pointerId); canvas.classList.add('is-grabbing'); tone(bodies.indexOf(grabbed));}
+    pointer.id = e.pointerId; canvas.setPointerCapture(e.pointerId);
+    if (e.clientY / height >= 2 / 3 || zone === 2) {
+      grabbed = bodies.reduce((closest, b) => {
+        const distance = Math.hypot(b.x - pointer.x, b.y - pointer.y);
+        if (distance >= b.r + (pointer.type === 'touch' ? 28 : 14)) return closest;
+        return !closest || distance < Math.hypot(closest.x - pointer.x, closest.y - pointer.y) ? b : closest;
+      }, null);
+      if (grabbed) { canvas.classList.add('is-grabbing'); tone(bodies.indexOf(grabbed));}
     } else if (e.clientY / height >= 1 / 3) pulse();
   });
-  canvas.addEventListener('pointerup', release);
-  canvas.addEventListener('pointercancel', release);
-  canvas.addEventListener('lostpointercapture', () => {grabbed = null; pointer.id = null; canvas.classList.remove('is-grabbing');});
+  function endPointer(e) { if (e.pointerId === pointer.id) release(); }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('lostpointercapture', () => {grabbed = null; pointer.id = null; if (pointer.type === 'touch') pointer.active = false; canvas.classList.remove('is-grabbing');});
   window.addEventListener('blur', () => {release(); pointer.active = false;});
   document.addEventListener('pointerleave', () => { if (!grabbed) pointer.active = false; });
   function pulse() {
@@ -140,7 +153,8 @@
         b.angle = Math.atan2(b.vy, b.vx); b.dv += (Math.min(0.25, Math.hypot(b.vx, b.vy) * 0.012) - b.deformation) * 0.12 * step;
       } else {
         b.vx += Math.cos(time * 0.6 + b.phase) * 0.018 * physics * step;
-        b.vy += Math.sin(time * 0.8 + b.phase) * 0.025 * physics * step;
+        // Gravity exceeds the ambient drift, returning released bodies to reach.
+        b.vy += (0.18 + Math.sin(time * 0.8 + b.phase) * 0.015 * physics) * step;
         const dx = b.x - pointer.x, dy = b.y - pointer.y, distance = Math.hypot(dx, dy);
         const touch = pointer.active && zone === 2 && distance < b.r + 24;
         if (touch) {
@@ -158,7 +172,11 @@
       b.dv *= Math.pow(0.82, step); b.deformation = clamp(b.deformation + b.dv * step, -0.28, 0.28);
       const left = b.r, right = Math.max(left, width - b.r), top = b.r + 52, bottom = Math.max(top, height - b.r - 16);
       if (b.x < left || b.x > right) {b.x = clamp(b.x, left, right); b.vx *= -0.6; b.dv -= 0.035;}
-      if (b.y < top || b.y > bottom) {b.y = clamp(b.y, top, bottom); b.vy *= -0.6; b.dv -= 0.035;}
+      if (b.y < top) {b.y = top; b.vy = Math.abs(b.vy) * 0.4; b.dv -= 0.035;}
+      if (b.y > bottom) {
+        b.y = bottom; b.vy = b.vy > 0.65 ? -b.vy * 0.38 : 0;
+        b.vx *= Math.pow(0.86, step); b.dv -= Math.min(0.035, Math.abs(b.vy) * 0.008);
+      }
     });
     for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) {
       const a = bodies[i], b = bodies[j], dx = b.x - a.x, dy = b.y - a.y;
