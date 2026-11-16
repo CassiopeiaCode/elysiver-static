@@ -284,14 +284,22 @@ window.Fluid = function (canvas) {
       const ang = Math.random() * Math.PI * 2, f = 220 + Math.random() * 380;
       splatRaw(x, y, Math.cos(ang) * f, Math.sin(ang) * f, inkColor(rgb, pal.light ? k * 1.8 : k), rmul);
     },
-    // 点击:中心高亮 + 一圈向外喷射
+    // Keep each color in its own outward-moving lobe. Their inner edges
+    // briefly overlap, but separated lobes no longer carry a premixed black core.
     burst(x, y, rgbs) {
-      const n = 9;
+      const n = Math.max(9, rgbs.length);
+      const aspect = canvas.width / canvas.height;
       for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2 + Math.random() * 0.3, f = 900 + Math.random() * 500;
-        splatRaw(x, y, Math.cos(a) * f, Math.sin(a) * f, inkColor(rgbs[i % rgbs.length], pal.light ? 1.1 : 1.6), 0.7);
+        const a = (i / n) * Math.PI * 2 + Math.random() * 0.15;
+        const f = 900 + Math.random() * 500;
+        const offset = pal.light ? 0.034 : 0;
+        const px = Math.max(0, Math.min(1, x + Math.cos(a) * offset / aspect));
+        const py = Math.max(0, Math.min(1, y + Math.sin(a) * offset));
+        splatRaw(px, py, Math.cos(a) * f, Math.sin(a) * f,
+          inkColor(rgbs[i % rgbs.length], pal.light ? 0.42 : 1.6), pal.light ? 0.32 : 0.7);
       }
-      splatRaw(x, y, 0, 0, inkColor(rgbs[0], pal.light ? 1.4 : 3.2), 1.2);
+      // A small central tint replaces the old heavy stationary ink deposit.
+      splatRaw(x, y, 0, 0, inkColor(rgbs[0], pal.light ? 0.12 : 3.2), pal.light ? 0.45 : 1.2);
       bloomBoost = pal.light ? 0.3 : 1.1;
       lt.x = lt.tx = x; lt.y = lt.ty = y; lt.i = 2.4;
     },
