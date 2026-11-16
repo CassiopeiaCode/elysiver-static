@@ -64,7 +64,6 @@ window.Fluid = function (canvas) {
         vec3 b=texture(uBloom,vUv).rgb*bloomI;
         float vig=mix(.7,1.,smoothstep(1.15,.25,length(vUv-.5)));
         vec3 dark, lite;
-        float lightShadow=1.;
         if(fx==0){
           float dx=length(texture(uTexture,vR).rgb)-length(texture(uTexture,vL).rgb);
           float dy=length(texture(uTexture,vT).rgb)-length(texture(uTexture,vB).rgb);
@@ -94,7 +93,6 @@ window.Fluid = function (canvas) {
             float r=14.*length(texel);
             for(int i=0;i<8;i++){ float a=float(i)*.785+j; vec2 o2=vec2(cos(a),sin(a))*r*(1.+float(i&1)); o2.x/=aspect; ao-=max(H(vUv+o2)-h,0.)*.32; }
             ao=clamp(ao,.35,1.);
-            lightShadow=(.8+.2*sh)*(.88+.12*ao);
             vec3 lit=c*(.32+1.25*dif*att*sh)*ao + lcol*spe*att*sh*1.6 + lcol*pow(1.-n.z,2.)*h*att*sh*.8;
             vec3 floorL=bg + lcol*att*.13*sh*(1.-h);
             dark=floorL*vig + lit + b*.8 + rays;
@@ -104,22 +102,6 @@ window.Fluid = function (canvas) {
             dark=(bg+lit+b)*vig + rays;
             lite=bg-c-b*.35 + vec3(1.)*spe*att*.25 - rays*.1;
           }
-        }
-        if(light>.5){
-          // Normalize pigment absorption before compositing: overlapping colors
-          // retain their hue instead of subtracting all channels down to black.
-          vec3 pigment=texture(uTexture,vUv).rgb;
-          float peak=max(pigment.r,max(pigment.g,pigment.b));
-          float coverage=1.-exp(-peak*2.4);
-          vec3 ink=vec3(1.)-pigment/max(peak,1e-4);
-          float lo=min(ink.r,min(ink.g,ink.b));
-          ink=(ink-lo)/max(1.-lo,1e-4);
-          ink=mix(vec3(.08),vec3(1.),ink);
-          vec3 normal=normalize(vec3(H(vL)-H(vR),H(vB)-H(vT),.035));
-          float shine=pow(max(dot(normal,normalize(vec3(-.4,.5,1.))),0.),24.);
-          lite=mix(bg,ink,coverage*.95);
-          lite=mix(lite,vec3(1.),shine*coverage*.23);
-          lite*=lightShadow;
         }
         vec3 col=mix(dark,lite,light);
         col+=(hash(gl_FragCoord.xy)-.5)/255.;
