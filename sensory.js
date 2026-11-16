@@ -3,12 +3,13 @@
   const tip = document.getElementById('sensory-tip');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const hex = value => [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16) / 255);
-  const inks = ['#932bff', '#26dfff', '#365bff', '#ffbf32'].map(hex);
+  // Coral, tangerine, marigold, emerald, lagoon, cornflower, and iris.
+  const inks = ['#f45b69', '#ff9848', '#f6cc4b', '#38c995', '#32c9d9', '#5685f5', '#9a55ef'].map(hex);
   let fluid;
   const fallback = () => {
     document.documentElement.classList.add('no-fluid');
     canvas.style.display = 'none';
-    tip.textContent = '白紫流墨';
+    tip.textContent = '七彩流墨';
   };
   if (reduced.matches) { fallback(); return; }
   try { fluid = window.Fluid(canvas); } catch (error) { console.warn('Fluid background unavailable', error); }
