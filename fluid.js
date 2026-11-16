@@ -103,6 +103,21 @@ window.Fluid = function (canvas) {
             lite=bg-c-b*.35 + vec3(1.)*spe*att*.25 - rays*.1;
           }
         }
+        if(light>.5){
+          // Normalize pigment absorption before compositing: overlapping colors
+          // retain their hue instead of subtracting all channels down to black.
+          vec3 pigment=texture(uTexture,vUv).rgb;
+          float peak=max(pigment.r,max(pigment.g,pigment.b));
+          float coverage=1.-exp(-peak*2.4);
+          vec3 ink=vec3(1.)-pigment/max(peak,1e-4);
+          float lo=min(ink.r,min(ink.g,ink.b));
+          ink=(ink-lo)/max(1.-lo,1e-4);
+          ink=mix(vec3(.08),vec3(1.),ink);
+          vec3 normal=normalize(vec3(H(vL)-H(vR),H(vB)-H(vT),.035));
+          float shine=pow(max(dot(normal,normalize(vec3(-.4,.5,1.))),0.),24.);
+          lite=mix(bg,ink,coverage*.95);
+          lite=mix(lite,vec3(1.),shine*coverage*.23);
+        }
         vec3 col=mix(dark,lite,light);
         col+=(hash(gl_FragCoord.xy)-.5)/255.;
         o=vec4(col,1.); }`,
