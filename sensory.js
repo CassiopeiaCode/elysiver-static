@@ -3,19 +3,19 @@
   const tip = document.getElementById('sensory-tip');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const hex = value => [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16) / 255);
-  const inks = ['#b8a0e6', '#aaa5e8', '#dfb9e6'].map(hex);
+  const inks = ['#7828f5', '#35106f', '#7828f5', '#3454ff', '#d52acb'].map(hex);
   let fluid;
   const fallback = () => {
     document.documentElement.classList.add('no-fluid');
     canvas.style.display = 'none';
-    tip.textContent = '白紫雾光';
+    tip.textContent = '白紫流墨';
   };
   if (reduced.matches) { fallback(); return; }
   try { fluid = window.Fluid(canvas); } catch (error) { console.warn('Fluid background unavailable', error); }
   if (!fluid) { fallback(); return; }
-  fluid.setPalette({bg: hex('#faf7ff'), inks, light: 1});
-  // Seed a soft nebula so the first frame is already alive.
-  inks.forEach((color, i) => fluid.drop(0.32 + i * 0.18, 0.4 + (i % 2) * 0.2, color, 0.65, 3));
+  fluid.setPalette({bg: hex('#fcfaff'), inks, light: 1});
+  // Establish vivid purple ink, with smaller electric-blue and magenta accents.
+  [inks[0], inks[1], inks[4]].forEach((color, i) => fluid.drop(0.32 + i * 0.18, 0.4 + (i % 2) * 0.2, color, i === 2 ? 0.35 : 0.65, i === 2 ? 1.8 : 3));
   let previous = null;
   let pending = null;
   let frame = null;

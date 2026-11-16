@@ -103,8 +103,6 @@ window.Fluid = function (canvas) {
             lite=bg-c-b*.35 + vec3(1.)*spe*att*.25 - rays*.1;
           }
         }
-        // Compress subtractive ink on white: overlapping splashes stay lavender.
-        lite=bg-(vec3(1.)-exp(-max(bg-lite,vec3(0.))))*.60;
         vec3 col=mix(dark,lite,light);
         col+=(hash(gl_FragCoord.xy)-.5)/255.;
         o=vec4(col,1.); }`,
