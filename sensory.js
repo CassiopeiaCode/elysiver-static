@@ -3,7 +3,7 @@
   const tip = document.getElementById('sensory-tip');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const hex = value => [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16) / 255);
-  const inks = ['#a020ff', '#ec16ff', '#a020ff', '#35dfff', '#ff35b8'].map(hex);
+  const inks = ['#8f24ff', '#5b18d6', '#a020ff', '#25d9ff', '#563cff'].map(hex);
   let fluid;
   const fallback = () => {
     document.documentElement.classList.add('no-fluid');
@@ -14,7 +14,7 @@
   try { fluid = window.Fluid(canvas); } catch (error) { console.warn('Fluid background unavailable', error); }
   if (!fluid) { fallback(); return; }
   fluid.setPalette({bg: hex('#fcfaff'), inks, light: 1});
-  // Bright violet and fluorescent pink lead, with a small cyan accent.
+  // Bright violet and electric blue lead, with a clean cyan accent.
   [inks[0], inks[1], inks[4]].forEach((color, i) => fluid.drop(0.32 + i * 0.18, 0.4 + (i % 2) * 0.2, color, i === 2 ? 0.35 : 0.65, i === 2 ? 1.8 : 3));
   let previous = null;
   let pending = null;
